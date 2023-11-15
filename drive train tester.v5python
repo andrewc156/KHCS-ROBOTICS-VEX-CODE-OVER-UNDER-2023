@@ -15,7 +15,9 @@ right_motor_b = Motor(Ports.PORT10, GearSetting.RATIO_6_1, True)
 right_drive_smart = MotorGroup(right_motor_a, right_motor_b)
 drivetrain_inertial = Inertial(Ports.PORT21)
 drivetrain = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial, 319.19, 320, 185.42, MM, 0.5)
-motor_3 = Motor(Ports.PORT3, GearSetting.RATIO_36_1, True)
+motor_group_3_motor_a = Motor(Ports.PORT3, GearSetting.RATIO_36_1, True)
+motor_group_3_motor_b = Motor(Ports.PORT4, GearSetting.RATIO_36_1, False)
+motor_group_3 = MotorGroup(motor_group_3_motor_a, motor_group_3_motor_b)
 
 
 # wait for rotation sensor to fully initialize
@@ -121,11 +123,11 @@ wait(3,SECONDS)
 
 def shot():
     brain.screen.clear_screen()
-    motor_3.set_velocity(2000, PERCENT)
-    motor_3.spin_for(FORWARD, 120, DEGREES)
+    motor_group_3.set_velocity(2000, PERCENT)
+    motor_group_3.spin_for(FORWARD, 70, DEGREES)
     wait(0.2, SECONDS)
-    motor_3.set_velocity(60, PERCENT)
-    motor_3.spin_for(FORWARD, -120, DEGREES)
+    motor_group_3.set_velocity(60, PERCENT)
+    motor_group_3.spin_for(FORWARD, -70, DEGREES)
     brain.screen.print("CODE RAN!!")
 
 def pre_autonomous():
