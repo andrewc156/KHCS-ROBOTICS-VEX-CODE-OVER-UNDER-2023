@@ -175,10 +175,10 @@ def user_control():
         else:
             arm.stop()
         if (controller_1.buttonB.pressing()):
-            if temp % 2 == 0:
+            if (temp % 2 == 0 and not intake.is_spinning()):
                 intake.spin(FORWARD)
                 temp = temp + 1
-            if temp % 2 == 1:
+            if (temp % 2 == 1 and intake.is_spinning()):
                 intake.stop()
                 temp = temp + 1
 
