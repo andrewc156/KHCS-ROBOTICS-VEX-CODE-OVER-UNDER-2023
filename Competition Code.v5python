@@ -124,6 +124,7 @@ from vex import *
 wait(3,SECONDS)
 arm.set_stopping(HOLD)
 
+#function to shot the catapault
 def shot():
     brain.screen.clear_screen()
     motor_group_3.set_velocity(2000, PERCENT)
@@ -136,7 +137,7 @@ def shot():
     motor_group_3.spin_for(FORWARD, -70, DEGREES)
     brain.screen.print("CODE RAN!!")
 
-
+#what we do before the competition starts
 def pre_autonomous():
     # actions to do when the program starts
     brain.screen.clear_screen()
@@ -146,7 +147,7 @@ def pre_autonomous():
     controller_1.rumble("-... -.-")
     wait(1, SECONDS)
 
-
+#autonoumous period code
 def autonomous():
     brain.screen.clear_screen()
     brain.screen.print("autonomous code")
@@ -155,7 +156,7 @@ def autonomous():
     wait(0.1, SECONDS)
     shot()
 
-
+#code for user control period
 def user_control():
     brain.screen.clear_screen()
     brain.screen.print("driver control code")
@@ -164,8 +165,10 @@ def user_control():
     temp = 0
     while True:
         wait(20, MSEC)
+        #if r2 is pressed it shoots
         if (controller_1.buttonR2.pressing()):
             shot()
+        #moves arm up and down
         if (controller_1.buttonUp.pressing()):
             arm.spin(FORWARD)
             print(arm.position(DEGREES))
@@ -174,6 +177,7 @@ def user_control():
             print(arm.position(DEGREES))
         else:
             arm.stop()
+        #toggles the intake on and off
         if (controller_1.buttonB.pressing()):
             if (temp % 2 == 0 and not intake.is_spinning()):
                 intake.spin(FORWARD)
