@@ -18,6 +18,8 @@ drivetrain = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial
 motor_group_3_motor_a = Motor(Ports.PORT3, GearSetting.RATIO_36_1, True)
 motor_group_3_motor_b = Motor(Ports.PORT4, GearSetting.RATIO_36_1, False)
 motor_group_3 = MotorGroup(motor_group_3_motor_a, motor_group_3_motor_b)
+arm = Motor(Ports.PORT11, GearSetting.RATIO_36_1, False)
+intake = Motor(Ports.PORT12, GearSetting.RATIO_18_1, False)
 
 
 # wait for rotation sensor to fully initialize
@@ -120,15 +122,20 @@ rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
 # Library imports
 from vex import *
 wait(3,SECONDS)
+arm.set_stopping(HOLD)
 
 def shot():
     brain.screen.clear_screen()
     motor_group_3.set_velocity(2000, PERCENT)
-    motor_group_3.spin_for(FORWARD, 70, DEGREES)
+    motor_group_3.set_stopping(COAST)
+    motor_group_3.set_max_torque(0, PERCENT)
     wait(0.2, SECONDS)
+    motor_group_3.set_stopping(BRAKE)
+    motor_group_3.set_max_torque(100, PERCENT)
     motor_group_3.set_velocity(60, PERCENT)
     motor_group_3.spin_for(FORWARD, -70, DEGREES)
     brain.screen.print("CODE RAN!!")
+
 
 def pre_autonomous():
     # actions to do when the program starts
@@ -154,10 +161,26 @@ def user_control():
     brain.screen.print("driver control code")
     controller_1.screen.clear_screen()
     controller_1.screen.print("driver control code")
+    temp = 0
     while True:
         wait(20, MSEC)
         if (controller_1.buttonR2.pressing()):
             shot()
+        if (controller_1.buttonUp.pressing()):
+            arm.spin(FORWARD)
+            print(arm.position(DEGREES))
+        elif (controller_1.buttonDown.pressing()):
+            arm.spin(REVERSE)
+            print(arm.position(DEGREES))
+        else:
+            arm.stop()
+        if (controller_1.buttonB.pressing()):
+            if temp % 2 == 0:
+                intake.spin(FORWARD)
+                temp = temp + 1
+            if temp % 2 == 1:
+                intake.stop()
+                temp = temp + 1
 
 # create competition instance
 comp = Competition(user_control, autonomous)
