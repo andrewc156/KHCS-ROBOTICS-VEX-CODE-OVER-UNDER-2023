@@ -7,19 +7,21 @@ brain=Brain()
 
 # Robot configuration code
 controller_1 = Controller(PRIMARY)
+arm = DigitalOut(brain.three_wire_port.h)
+left_wing = DigitalOut(brain.three_wire_port.g)
+up_arm = Motor(Ports.PORT19, GearSetting.RATIO_36_1, True)
 left_motor_a = Motor(Ports.PORT7, GearSetting.RATIO_6_1, True)
 left_motor_b = Motor(Ports.PORT8, GearSetting.RATIO_6_1, True)
 left_drive_smart = MotorGroup(left_motor_a, left_motor_b)
 right_motor_a = Motor(Ports.PORT9, GearSetting.RATIO_6_1, False)
 right_motor_b = Motor(Ports.PORT10, GearSetting.RATIO_6_1, False)
 right_drive_smart = MotorGroup(right_motor_a, right_motor_b)
-drivetrain_inertial = Inertial(Ports.PORT11)
-drivetrain = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial, 319.19, 320, 185.42, MM, 0.5)
-arm = DigitalOut(brain.three_wire_port.a)
-left_wing = DigitalOut(brain.three_wire_port.b)
-right_wing = DigitalOut(brain.three_wire_port.c)
-up_arm = Motor(Ports.PORT19, GearSetting.RATIO_36_1, False)
-inertial_sensor = Inertial(Ports.PORT21)
+drivetrain_inertial = Inertial(Ports.PORT13)
+drivetrain = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial, 319.19, 320, 40, MM, 0.6)
+Cata_motor_a = Motor(Ports.PORT11, GearSetting.RATIO_36_1, False)
+Cata_motor_b = Motor(Ports.PORT12, GearSetting.RATIO_36_1, True)
+Cata = MotorGroup(Cata_motor_a, Cata_motor_b)
+flywheel = Motor(Ports.PORT6, GearSetting.RATIO_6_1, False)
 
 
 # wait for rotation sensor to fully initialize
@@ -118,27 +120,27 @@ rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
 
 #endregion VEXcode Generated Robot Configuration
 
-
 # Library imports
 from vex import *
 wait(3,SECONDS)
 up_arm.set_stopping(HOLD)
 drivetrain.set_stopping(BRAKE)
+
+
+def shot():
+    Cata.spin_for(FORWARD,360,DEGREES,wait=False)
+
 def wings_out():
     left_wing.set(True)
-    right_wing.set(True)
 
 def wings_in():
     left_wing.set(False)
-    right_wing.set(False)
 
 def pre_autonomous():
     # actions to do when the program starts
-    inertial_sensor.calibrate()
-    
-    arm.set(True)
+    arm.set(False)
     left_wing.set(False)
-    right_wing.set(False)
+    wings_in()
     brain.screen.clear_screen()
     controller_1.screen.clear_screen()
     controller_1.screen.print("pre-auton code")
@@ -146,26 +148,48 @@ def pre_autonomous():
     controller_1.rumble("-... -.-")
     wait(1, SECONDS)
 
+
+
+
+
+
 #autonoumous period code
 def autonomous():
-    brain.screen.clear_screen()
-    brain.screen.print("autonomous code")
-    arm.set(False)
-    wait(1, SECONDS)
-    arm.set(True)
-    brain.screen.clear_screen()
-    brain.screen.print("wow")
-    controller_1.screen.clear_screen()
-    controller_1.screen.print("autonomous code")
-    wait(0.1, SECONDS)
-    drivetrain.set_drive_velocity(60, PERCENT)
-    drivetrain_inertial.set_heading(0)
-    drivetrain.drive_for(FORWARD,80,INCHES)
-    drivetrain.drive_for(REVERSE,10,INCHES)
-    drivetrain.drive(FORWARD)
-        
-def pid:
+     wait(0.1,SECONDS)
+    # arm.set(False)
+    # brain.screen.clear_screen()
+    # brain.screen.print("autonomous code")
+    # up_arm.set_velocity(100,PERCENT)
+    # up_arm.spin_for(FORWARD,90,DEGREES,wait=False)
+    # wait(0.1,SECONDS)
+    # drivetrain.set_drive_velocity(80,PERCENT)
+    # drivetrain.drive_for(FORWARD,44,INCHES,wait=False)
+    # wait(2.5,SECONDS)
+    # drivetrain.drive_for(REVERSE,25,INCHES)
+    # drivetrain.turn_for(LEFT,67,DEGREES)
+    # drivetrain.drive_for(FORWARD,28,INCHES,wait=False)
+    # arm.set(True)
+    # drivetrain.turn_for(RIGHT,67,DEGREES)
+    # drivetrain.drive_for(FORWARD,24,INCHES,wait=False)
+    # drivetrain.turn_for(RIGHT,90,DEGREES)
+    # drivetrain.drive_for(FORWARD,30,INCHES,wait=False)
+    # wait(1,SECONDS)
+    # drivetrain.drive_for(REVERSE,30,INCHES,wait=False)
     
+    
+    
+
+
+    
+
+
+
+
+
+
+
+        
+
 
 #code for user control period
 def user_control():
@@ -173,43 +197,43 @@ def user_control():
     up_arm.set_stopping(BRAKE)
     brain.screen.clear_screen()
     controller_1.screen.print("driver control code")
-    inertial_sensor.calibrate()
-    f = inertial_sensor.heading(DEGREES)
-    #arm.set_velocity(100, PERCENT)
+    up_arm.set_velocity(100, PERCENT)
+    flywheel.set_velocity(0,PERCENT)
+    flywheel.set_max_torque(100000,PERCENT)
+    flywheel.set_stopping(COAST)
     while True:
-
         wait(20, MSEC)
         #code to open and close the arm
         if controller_1.buttonA.pressing():
-            arm.set(False)
-        else:
             arm.set(True)
-        
-        #code to extend and open the wings
-        if controller_1.buttonB.pressing():
+        elif controller_1.buttonB.pressing():
+            arm.set(False)
+        if controller_1.buttonX.pressing():
             wings_out()
-        else:
+        elif controller_1.buttonY.pressing():
             wings_in()
-        if (controller_1.buttonX.pressing()):
-            up_arm.spin(FORWARD)
-        elif (controller_1.buttonY.pressing()):
+        if (controller_1.buttonUp.pressing()):
             up_arm.spin(REVERSE)
+        elif (controller_1.buttonDown.pressing()):
+            up_arm.spin(FORWARD)
         else:
             up_arm.stop()
-        if (controller_1.axis3.position() != 0):
-            if inertial_sensor.heading(DEGREES) > f + 2.5 or inertial_sensor.heading(DEGREES) < f - 2.5:
-                f = inertial_sensor.heading(DEGREES)
-                print(f)
-            else:
-                drivetrain.set_drive_velocity(controller_1.axis3.position(),PERCENT)
-                drivetrain.drive(FORWARD)
-                drivetrain.turn_for(RIGHT,inertial_sensor.heading(DEGREES),DEGREES,wait=False)
-                print(inertial_sensor.heading(DEGREES))
-                print("a")
-            
+
+        if (controller_1.buttonR1.pressing()):
+            Cata.spin(FORWARD)
+            Cata.set_velocity(75,PERCENT)
+        else:
+            Cata.stop
+            Cata.set_velocity(0,PERCENT)
+        if (controller_1.buttonRight.pressing()):
+            flywheel.set_velocity(1000000000,PERCENT)
+            flywheel.spin(FORWARD)
+        else:
+            flywheel.stop()
 
         
-        
+
+    
             
 
 # create competition instance
