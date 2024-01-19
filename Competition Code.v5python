@@ -7,37 +7,21 @@ brain=Brain()
 
 # Robot configuration code
 controller_1 = Controller(PRIMARY)
-arm = DigitalOut(brain.three_wire_port.h)
-left_wing = DigitalOut(brain.three_wire_port.g)
-up_arm = Motor(Ports.PORT19, GearSetting.RATIO_36_1, True)
-left_motor_a = Motor(Ports.PORT7, GearSetting.RATIO_6_1, True)
-left_motor_b = Motor(Ports.PORT8, GearSetting.RATIO_6_1, True)
+wings = DigitalOut(brain.three_wire_port.g)
+left_motor_a = Motor(Ports.PORT9, GearSetting.RATIO_6_1, True)
+left_motor_b = Motor(Ports.PORT10, GearSetting.RATIO_6_1, True)
 left_drive_smart = MotorGroup(left_motor_a, left_motor_b)
-right_motor_a = Motor(Ports.PORT9, GearSetting.RATIO_6_1, False)
-right_motor_b = Motor(Ports.PORT10, GearSetting.RATIO_6_1, False)
+right_motor_a = Motor(Ports.PORT19, GearSetting.RATIO_6_1, False)
+right_motor_b = Motor(Ports.PORT20, GearSetting.RATIO_6_1, False)
 right_drive_smart = MotorGroup(right_motor_a, right_motor_b)
-drivetrain_inertial = Inertial(Ports.PORT13)
-drivetrain = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial, 319.19, 320, 40, MM, 0.6)
-Cata_motor_a = Motor(Ports.PORT11, GearSetting.RATIO_36_1, False)
-Cata_motor_b = Motor(Ports.PORT12, GearSetting.RATIO_36_1, True)
-Cata = MotorGroup(Cata_motor_a, Cata_motor_b)
+drivetrain = DriveTrain(left_drive_smart, right_drive_smart, 219.44, 295, 40, MM, 0.6)
 flywheel = Motor(Ports.PORT6, GearSetting.RATIO_6_1, False)
+intake = Motor(Ports.PORT1, GearSetting.RATIO_6_1, False)
+auton_selector = Rotation(Ports.PORT15, False)
 
 
 # wait for rotation sensor to fully initialize
 wait(30, MSEC)
-
-def calibrate_drivetrain():
-    # Calibrate the Drivetrain Inertial
-    sleep(200, MSEC)
-    brain.screen.print("Calibrating")
-    brain.screen.next_row()
-    brain.screen.print("Inertial")
-    drivetrain_inertial.calibrate()
-    while drivetrain_inertial.is_calibrating():
-        sleep(25, MSEC)
-    brain.screen.clear_screen()
-    brain.screen.set_cursor(1, 1)
 
 
 def play_vexcode_sound(sound_name):
@@ -64,12 +48,6 @@ def rc_auto_loop_function_controller_1():
     # update the motors based on the input values
     while True:
         if remote_control_code_enabled:
-            # stop the motors if the brain is calibrating
-            if drivetrain_inertial.is_calibrating():
-                left_drive_smart.stop()
-                right_drive_smart.stop()
-                while drivetrain_inertial.is_calibrating():
-                    sleep(25, MSEC)
             
             # calculate the drivetrain motor velocities from the controller joystick axies
             # left = axis3 + axis1
@@ -123,30 +101,42 @@ rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
 # Library imports
 from vex import *
 wait(3,SECONDS)
-up_arm.set_stopping(HOLD)
 drivetrain.set_stopping(BRAKE)
 
 
-def shot():
-    Cata.spin_for(FORWARD,360,DEGREES,wait=False)
 
 def wings_out():
-    left_wing.set(True)
+    wings.set(False)
 
 def wings_in():
-    left_wing.set(False)
+    wings.set(True)
 
 def pre_autonomous():
     # actions to do when the program starts
-    arm.set(False)
-    left_wing.set(False)
+    auton_selector.set_position(180,DEGREES)
+    wings.set(False)
     wings_in()
-    brain.screen.clear_screen()
     controller_1.screen.clear_screen()
     controller_1.screen.print("pre-auton code")
     brain.screen.print("pre-auton code")
     controller_1.rumble("-... -.-")
     wait(1, SECONDS)
+    while True:
+        wait(20, MSEC)
+        if auton_selector.angle()>130:
+            controller_1.screen.set_cursor(3, 3)
+            controller_1.screen.print("Offensive Auton")
+            brain.screen.clear_screen()
+            controller_1.screen.clear_screen()
+        else:
+            controller_1.screen.set_cursor(3, 3)
+            controller_1.screen.print("Defensive Auton")
+            brain.screen.clear_screen()
+            controller_1.screen.clear_screen()
+
+    
+            
+
 
 
 
@@ -155,36 +145,42 @@ def pre_autonomous():
 
 #autonoumous period code
 def autonomous():
-     wait(0.1,SECONDS)
-    # arm.set(False)
-    # brain.screen.clear_screen()
-    # brain.screen.print("autonomous code")
-    # up_arm.set_velocity(100,PERCENT)
-    # up_arm.spin_for(FORWARD,90,DEGREES,wait=False)
-    # wait(0.1,SECONDS)
-    # drivetrain.set_drive_velocity(80,PERCENT)
-    # drivetrain.drive_for(FORWARD,44,INCHES,wait=False)
-    # wait(2.5,SECONDS)
-    # drivetrain.drive_for(REVERSE,25,INCHES)
-    # drivetrain.turn_for(LEFT,67,DEGREES)
-    # drivetrain.drive_for(FORWARD,28,INCHES,wait=False)
-    # arm.set(True)
-    # drivetrain.turn_for(RIGHT,67,DEGREES)
-    # drivetrain.drive_for(FORWARD,24,INCHES,wait=False)
-    # drivetrain.turn_for(RIGHT,90,DEGREES)
-    # drivetrain.drive_for(FORWARD,30,INCHES,wait=False)
-    # wait(1,SECONDS)
-    # drivetrain.drive_for(REVERSE,30,INCHES,wait=False)
+    drivetrain.set_stopping(HOLD)
+    intake.set_velocity(1000,PERCENT)
+    drivetrain.set_drive_velocity(80,PERCENT)
+    drivetrain.set_turn_velocity(40,PERCENT)
+    if auton_selector.angle()>130:
+        intake.spin(FORWARD)
+        drivetrain.drive_for(FORWARD,36,INCHES)
+        drivetrain.turn_for(RIGHT,45,DEGREES)
+        intake.spin(REVERSE)
+        drivetrain.drive_for(REVERSE,10,INCHES)
+        drivetrain.turn_for(LEFT,30,DEGREES)
+        intake.spin(FORWARD)
+        drivetrain.drive_for(FORWARD,5,INCHES)
+        
+        
+        
+
+        
+    else:
+        drivetrain.drive_for(FORWARD,60,INCHES,wait=False)
+        wait(5,SECONDS)
+        drivetrain.drive_for(REVERSE,20,INCHES)
     
     
-    
 
 
     
 
 
 
+def brak():
+    drivetrain.set_stopping(BRAKE)
+    drivetrain.set_drive_velocity(0,PERCENT)
 
+def no_brak():
+    drivetrain.set_stopping(COAST)
 
 
 
@@ -193,49 +189,99 @@ def autonomous():
 
 #code for user control period
 def user_control():
-    up_arm.set_velocity(20,PERCENT)
-    up_arm.set_stopping(BRAKE)
+    
+    global integral, previous_error, target_flywheel_speed
+        # PID constants
+    kP = 2.5
+    kI = 0.005
+    kD = 0
+
+    # PID variables
+    integral = 0
+    previous_error = 0
+    target_flywheel_speed = 400  
+
+    
+    speed_readings = []
+    max_readings = 100
+
+
+    def update_speed_readings(new_reading):
+        if len(speed_readings) >= max_readings:
+            speed_readings.pop(0)
+        speed_readings.append(new_reading)
+
+
+    def calculate_running_average():
+        if speed_readings:
+            return sum(speed_readings) / len(speed_readings)
+        else:
+            return 0
+
+
+    def pid_controller(target_speed, current_speed, kP, kI, kD, integral, previous_error):
+        error = target_speed - current_speed
+        integral = integral + error
+        derivative = error - previous_error
+        output = (kP * error) + (kI * integral) + (kD * derivative)
+        previous_error = error
+        return output, integral, previous_error
+
+
+    drivetrain.set_stopping(COAST)
     brain.screen.clear_screen()
-    controller_1.screen.print("driver control code")
-    up_arm.set_velocity(100, PERCENT)
-    flywheel.set_velocity(0,PERCENT)
+    brain.screen.set_cursor(3, 3)
+    brain.screen.print("driver control code")
+    #flywheel.set_velocity(75,PERCENT)
+
     flywheel.set_max_torque(100000,PERCENT)
+    intake.set_max_torque(1000,PERCENT)
     flywheel.set_stopping(COAST)
+    intake.set_velocity(100,PERCENT)
     while True:
         wait(20, MSEC)
-        #code to open and close the arm
-        if controller_1.buttonA.pressing():
-            arm.set(True)
-        elif controller_1.buttonB.pressing():
-            arm.set(False)
-        if controller_1.buttonX.pressing():
-            wings_out()
-        elif controller_1.buttonY.pressing():
-            wings_in()
-        if (controller_1.buttonUp.pressing()):
-            up_arm.spin(REVERSE)
-        elif (controller_1.buttonDown.pressing()):
-            up_arm.spin(FORWARD)
-        else:
-            up_arm.stop()
-
-        if (controller_1.buttonR1.pressing()):
-            Cata.spin(FORWARD)
-            Cata.set_velocity(75,PERCENT)
-        else:
-            Cata.stop
-            Cata.set_velocity(0,PERCENT)
+        #code for the flywheel
         if (controller_1.buttonRight.pressing()):
-            flywheel.set_velocity(1000000000,PERCENT)
+            current_speed = flywheel.velocity(RPM)  
+            pid_output, integral, previous_error = pid_controller(target_flywheel_speed, current_speed, kP, kI, kD, integral, previous_error)
+            flywheel.set_velocity(pid_output, PERCENT)
+            flywheel.spin(FORWARD)
+        
+            #print(flywheel.velocity(RPM))
+            current_speed = flywheel.velocity(RPM)
+            update_speed_readings(current_speed)
+            average_speed = calculate_running_average()
+            print(average_speed)
+            
+        #kill mode lol
+        elif (controller_1.buttonUp.pressing()):
+            flywheel.set_velocity(1000000,PERCENT)
             flywheel.spin(FORWARD)
         else:
             flywheel.stop()
+        #code for the intake
+        if controller_1.buttonR2.pressing():
+            intake.spin(FORWARD)
+        elif controller_1.buttonL2.pressing():
+            intake.spin(REVERSE)
+        else:
+            intake.stop()
+        if controller_1.buttonX.pressing():
+            wings_in()
+        elif controller_1.buttonY.pressing():
+            wings_out()
+
+        
+            
+
+        
+            
 
         
 
     
             
 
-# create competition instance
+
 comp = Competition(user_control, autonomous)
 pre_autonomous()
